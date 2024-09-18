@@ -1,12 +1,16 @@
-const { error } = require("console");
+const { isValidObjectId } = require("mongoose");
 const User = require("../models/user.models.js");
 
 class UserController {
-  constructor() {}
+  #_userModel;
 
-  async getAllUsers(req, res) {
+  constructor() {
+    this.#_userModel = User;
+  }
+
+  getAllUsers = async (req, res) => {
     try {
-      const allUsers = await User.find();
+      const allUsers = await this.#_userModel.find(req.body);
 
       if (!allUsers) {
         return res.status(404).send({
@@ -24,21 +28,17 @@ class UserController {
         message: error.message,
       });
     }
-  }
+  };
 
-  async getUserById(req, res) {
+  getUserById = async (req, res) => {
     try {
-      const user = await User.findOne();
+      const user_id = await this.#_userModel.findById(req.params?.id);
 
-      if (!user) {
-        return res.status(404).send({
-          message: "User not found",
-          error: error.message,
-        });
-      }
+      this.#_checkObjectId(user_id);
+
       res.status(200).send({
         message: "success",
-        data: user,
+        data: user_id,
       });
     } catch (error) {
       return res.status(500).send({
@@ -46,21 +46,24 @@ class UserController {
         error: error.message,
       });
     }
-  }
+  };
 
-  async createUser(req, res) {
+  createUser = async (req, res) => {
     try {
-      const { first_name, phone, email } = await User.create(req.body);
+      const { first_name, phone, email } = await this.#_userModel.create(
+        req.body
+      );
 
       const newUser = {
         first_name,
         phone,
         email,
       };
+      console.log(newUser);
 
       if (!newUser) {
         return res.status(404).send({
-          message: "Datas not found",
+          message: "Error in created user",
           error: error.message,
         });
       }
@@ -70,28 +73,21 @@ class UserController {
       });
     } catch (error) {
       return res.status(500).send({
-        message: error.message,
+        message: "Error in server",
       });
     }
-  }
+  };
 
-  async updateUser(req, res) {
+  updateUser = async (req, res) => {
     try {
-      const { first_name, phone, email } = await User.findOneAndUpdate(
-        req.body
+      const user_id = req.params?.id;
+      const newUser = await this.#_userModel.findByIdAndUpdate(
+        user_id,
+        req.body,
+        { new: true, runValidators: true }
       );
-      const user_id = await User.findOne(req.params?.id);
 
-      if (!user_id) {
-        return res.status(404).send({
-          message: "User id not found",
-        });
-      }
-      const newUser = {
-        first_name,
-        phone,
-        email,
-      };
+      this.#_checkObjectId(user_id);
 
       if (!newUser) {
         return res.status(404).send({
@@ -99,8 +95,6 @@ class UserController {
           error: error.message,
         });
       }
-
-      console.log(newUser);
 
       res.status(201).send({
         message: "success",
@@ -111,17 +105,14 @@ class UserController {
         message: error.message,
       });
     }
-  }
+  };
 
-  async deleteUser(req, res) {
+  deleteUser = async (req, res) => {
     try {
-      const user = await User.findOneAndDelete(req.params?.id);
+      const user_id = await this.#_userModel.findOneAndDelete(req.params?.id);
 
-      if (!user) {
-        return res.status({
-          message: "User id not found",
-        });
-      }
+      this.#_checkObjectId(user_id);
+
       res.status(201).send({
         message: "deleted successfully",
       });
@@ -130,6 +121,13 @@ class UserController {
         message: "Bad request",
       });
     }
-  }
+  };
+
+  #_checkObjectId = (id) => {
+    if (!isValidObjectId) {
+      throw new Error(`Id: ${id} is not a valid object`);
+    }
+    return null;
+  };
 }
 module.exports = new UserController();

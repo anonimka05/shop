@@ -3,9 +3,9 @@ const userController = require("../controllers/user.controller.js")
 
 const userRouter = Router()
 
+userRouter.post("/add", userController.createUser)
 userRouter.get("/", userController.getAllUsers)
 userRouter.get("/:id", userController.getUserById)
-userRouter.post("/add", userController.createUser)
 userRouter.put("/:id", userController.updateUser)
 userRouter.delete("/:id", userController.deleteUser)
 
